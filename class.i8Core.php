@@ -2,11 +2,13 @@
 
 class i8Core {
 	
-    var $prefix = 'i8_';
+    var $prefix = '';
 
     var $namespace = 'i8core_';
 
     var $msgs = array();
+	
+	private $__routes = array();
 
 	function __construct()
 	{
@@ -68,7 +70,7 @@ class i8Core {
 	private function hooks_define()
 	{
 		# some inside actions
-		add_action('init', array($this, '_register_routes'));
+		add_action('after_setup_theme', array($this, '_register_routes'));
 		add_action('init', array($this, '_unauth_wp_ajax'));
 		add_action('admin_init', array($this, '_options_register'));
 		add_action('admin_menu', array($this, '_pages_add'));
@@ -134,10 +136,11 @@ class i8Core {
 	
 	
 	private function hook_register($method, $override = false)
-	{
+	{	
 		# extract hook type and handler
-		if (!$pos = strpos($method, '__')) // not false and not on zero position
-				return;
+		if (!$pos = strpos($method, '__')) { // not false and not on zero position
+			return;
+		}
 	
 		list($handle, $priority, $accepted_args) = explode('_', substr($method, 0, $pos));
 		$hook = substr($method, $pos + 2);
@@ -145,32 +148,43 @@ class i8Core {
 		$priority = is_numeric($priority) ? $priority : 10;
 		$accepted_args = is_numeric($accepted_args) ? $accepted_args : 1;
 	
-		if ($override) // lets you define your own hook handler
-				$method = $override;
+		if ($override) { // lets you define your own hook handler
+			$method = $override;
+		}
 	
 		switch ( $handle ) :
 			case 'a':
 			case 'action':
-					add_action( $hook, array($this, $method), $priority, $accepted_args );
-					break;
+				add_action( $hook, array($this, $method), $priority, $accepted_args );
+				break;
 			case 'f':
 			case 'filter':
-					add_filter( $hook, array($this, $method), $priority, $accepted_args );
-					break;
+				add_filter( $hook, array($this, $method), $priority, $accepted_args );
+				break;
 			case 'sc':
 			case 'shortcode':
-					add_shortcode( $hook, array($this, $method) );
-					break;
+				add_shortcode( $hook, array($this, $method) );
+				break;
 		endswitch;
 	}
 	
 	
 	/* add routes */
-	function _register_routes()
+	function _register_routes($routes = false)
 	{
-		if (!empty($this->__routes))
-			foreach ($this->__routes as $method => $handle)
+		if (!$routes && !empty($this->_routes)) {
+			$routes =& $this->_routes;
+		}
+		
+		if (!empty($routes)) {
+			foreach ($routes as $method => $handle) {
+				$this->__routes[] = array(
+					'has_matched' => false,
+					'data' => compact('method', 'handle'),
+				); // save reference for pre_route2 function
 				$this->hook_register($method, 'pre_route2');
+			}
+		}
 		
 	}
 	
@@ -191,43 +205,58 @@ class i8Core {
 	
 	/* is used by router to prepare proper route2 calls, is meant to be called as a callback 4 actions/filters only */
 	function pre_route2()
-	{
-		foreach ($this->__routes as $hook => $handle)
-			if (preg_match("#".func_num_args()."?__".current_filter()."$#i", $hook))
-			{
-	
-				$args = func_get_args();
-				array_unshift($args, $handle);
-	
-				call_user_func_array(array($this, 'route2'), $args); // first match triggered
-				break;
+	{			
+		foreach ($this->__routes as &$route) 
+		{
+			if ($route['has_matched']) {
+				continue;	
 			}
+			
+			if (preg_match("#".func_num_args()."?__".current_filter()."$#i", $route['data']['method']))
+			{
+				$route['has_matched'] = true;
+				
+				$args = func_get_args();
+				array_unshift($args, $route['data']['handle']);
+								
+				call_user_func_array(array($this, 'route2'), $args); 
+			}
+		}
 	}
 	
 	
-	/* is meant to route internal or external calls to MTB engine */
+	/* is meant to route internal or external calls to TRC engine */
 	function route2($handle = false)
 	{
-		if (!$handle)
+		if (!$handle) {
 			$handle = $_GET['page'];
+		}
 	
-		if ( false === strpos($handle, '/') )
+		if (false === strpos($handle, '/')) {
 			return;
+		}
 	
 		# define Ctrl class if not yet defined
-		if ( !class_exists("{$this->prefix}_Ctrl") )
+		if (!class_exists("{$this->prefix}Ctrl")) {
 			$this->load("{$this->i8_path}/base.Ctrl.php");
+		}
 	
 		list($ctrl, $action) = explode('/', strtolower($handle));
 	
 		$this->load("{$this->path}/_ctrls/$ctrl.php");
 		$ctrl_class = ucfirst($ctrl) . 'Ctrl';
 	
-	
 		$args = func_get_args();
 		array_shift($args); // shift off handle
 	
-		$this->ctrls[$ctrl] = new $ctrl_class($this, $action);
+		// create instance only if we do not already have one
+		if (!isset($this->ctrls[$ctrl])) {
+			$this->ctrls[$ctrl] = new $ctrl_class($this);
+		} 	
+		
+		// set current action
+		$this->ctrls[$ctrl]->action = $action;		
+		
 		return call_user_func_array(array($this->ctrls[$ctrl], $action), $args);
 	}
 	

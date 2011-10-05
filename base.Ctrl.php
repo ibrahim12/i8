@@ -21,11 +21,16 @@ class Ctrl {
 		
 		# if there's appropriate robot - load it up
 		$plugin->load("{$this->plugin->i8_path}/base.Robot.php");
-		$plugin->load("{$this->robots}/{$this->ctrl}_robot.php");
 		
+		$robot_file = "{$this->robots}/{$this->ctrl}_robot.php";
+		if (file_exists($robot_file)) {
+			$plugin->load($robot_file);	
+		}
+				
 		$robot_class = $this->ctrl . "Robot";
-		if (!class_exists($robot_class))
-			$robot_class = "{$this->plugin->prefix}_Robot";
+		if (!class_exists($robot_class)) {
+			$robot_class = "{$this->plugin->prefix}Robot";
+		}
 			
 		$this->robot = new $robot_class($this->plugin);
 		
@@ -52,9 +57,13 @@ class Ctrl {
 	 *
 	 * $path - Path to the template to render
 	 */
-	function _render($path, $vars = null)
+	function _render($path = false, $vars = null)
 	{
-		$this->output = $this->plugin->load( "{$this->tpls}/{$this->action}.php", false, true, $vars );
+		if (!$path) {
+			$path = "{$this->tpls}/{$this->action}.php";	
+		}
+				
+		$this->output = $this->plugin->load($path, false, true, $vars);
 	}
 	
 	
