@@ -14,10 +14,13 @@ class Ctrl {
 					
 		# what's the name of controller?
 		$this->ctrl = strtolower(substr_replace(get_class($this), '', -4));	    
+		
+		$this->path = $this->plugin->path;
+		$this->url = $this->plugin->url;
         
 		# set path to related templates
-        $this->tpls = $this->plugin->path . '/_tpls/' . $this->ctrl;
-		$this->robots = $this->plugin->path . '/_robots';
+        $this->tpls = $this->path . '/_tpls/' . $this->ctrl;
+		$this->robots = $this->path . '/_robots';
 		
 		# if there's appropriate robot - load it up
 		$plugin->load("{$this->plugin->i8_path}/base.Robot.php");
