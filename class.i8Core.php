@@ -87,27 +87,32 @@ class i8Core {
 		# include add-ons if available
 		if ( !empty($this->addons) )
 			foreach ($this->addons as $addon) {
+				
+				$addon = ucfirst(strtolower($addon));
 	
-				if (class_exists("{$this->prefix}$addon"))
+				if (class_exists("{$this->prefix}$addon")) {
 					continue;
+				}
 	
 				$path = "$this->path/addons/class.$addon.php";
-				if (!file_exists($path))
-					$path = "$this->i8_path/addons/class.$addon.php";
+				if (!file_exists($path)) {
+					$path = "$this->i8_path/addons/class.$addon.php"; // try to use addon from global i8
+				}
 	
 				if (file_exists($path))
 				{
-					require_once( $path );
+					require_once($path);
 					//$fqdn_addon = "Plugino/$a";
-					$addon_class = "{$this->prefix}$addon";
+					$addon_class = "{$this->prefix}{$addon}Addon";
 					$this->$addon = new $addon_class;
 					$this->$addon->url = $this->url;
 					$this->$addon->path = $this->path;
 					$this->$addon->plugin = $this;
 	
 					// for the hook handlers that needs three variables defined above
-					if (method_exists($this->$addon, 'hooks'))
+					if (method_exists($this->$addon, 'hooks')) {
 						$this->$addon->hooks();
+					}
 				}
 			}
 	
@@ -404,9 +409,6 @@ class i8Core {
 			update_option("{$this->namespace}version", $version);
 			update_option("{$this->namespace}info", $this->i8_data);
 		}
-	
-	
-		do_action("i8_{$this->namespace}activated");
 	}
 	
 	
