@@ -67,6 +67,24 @@ class i8Core {
 	}
 	
 	
+	function __call($method, $args) 
+	{
+		if (!$pos = strpos($method, '__')) { // not false and not on zero position
+			return;
+		}
+		
+		list($handle, $ctrl, $action) = explode('__', $method);
+		
+		// by now this is going to be used for routing actions to TRC controllers
+		switch ($handle) {
+			case 'r':
+			case 'route':
+				array_unshift($args, "$ctrl/$action");
+				return call_user_func_array(array($this, 'route2'), $args);
+		}
+	}
+	
+	
 	private function hooks_define()
 	{
 		# some inside actions
@@ -85,7 +103,7 @@ class i8Core {
 	function _load_addons()
 	{
 		# include add-ons if available
-		if ( !empty($this->addons) )
+		if ( !empty($this->addons) ) :
 			foreach ($this->addons as $addon) {
 				
 				$addon = ucfirst(strtolower($addon));
@@ -116,6 +134,7 @@ class i8Core {
 					}
 				}
 			}
+		endif;
 	
 		do_action("i8_addons_loaded_{$this->classname}");
 	}
@@ -127,29 +146,6 @@ class i8Core {
 	{
 		return $checked_data;
 	}
-	
-	/**
-	 * In TRC pre_route2 can be requested to be attached to the same action multiple times and the only way to accomplish this is to set bigger (lower) priority
-	 */
-	private function get_the_lowest_priority($tag, $function_to_check, $priority = 10) 
-	{
-		global $wp_filter;
-			
-		$has = !empty($wp_filter[$tag]);
-		if ( false === $function_to_check || false == $has )
-			return $priority;
-	
-		if (!$idx = _wp_filter_build_unique_id($tag, $function_to_check, false))
-			return $priority;
-					
-		if (isset($wp_filter[$tag][$priority][$idx])) {
-			while (isset($wp_filter[$tag][$priority][$idx])) {
-				$priority++;
-			}
-		}
-		return $priority;	
-	}
-	
 	
 	private function hooks_register($obj = false)
 	{
@@ -183,13 +179,10 @@ class i8Core {
 		switch ( $handle ) :
 			case 'a':
 			case 'action':
-				$priority = $this->get_the_lowest_priority($tag, array($this, $method), $priority);
 				add_action( $tag, array($this, $method), $priority, $accepted_args );
 				break;
 			case 'f':
 			case 'filter':
-				// check if the callback has already been attached to the hook
-				$priority = $this->get_the_lowest_priority($tag, array($this, $method), $priority);
 				add_filter( $tag, array($this, $method), $priority, $accepted_args );
 				break;
 			case 'sc':
@@ -209,11 +202,7 @@ class i8Core {
 		
 		if (!empty($routes)) {
 			foreach ($routes as $method => $handle) {
-				$this->__routes[] = array(
-					'has_run' => false,
-					'data' => compact('method', 'handle'),
-				); // save reference for pre_route2 function
-				$this->hook_register($method, 'pre_route2');
+				$this->hook_register($method, "r__" . str_replace("/", "__", $handle));
 			}
 		}	
 	}
@@ -228,28 +217,6 @@ class i8Core {
 			{
 				do_action('wp_ajax_' . $_REQUEST['action']);
 				exit;
-			}
-		}
-	}
-	
-	
-	/* is used by router to prepare proper route2 calls, is meant to be called as a callback 4 actions/filters only */
-	function pre_route2()
-	{				
-		foreach ($this->__routes as $i => $route) 
-		{
-			if ($route['has_run']) {
-				continue;	
-			}
-			
-			if (preg_match("#".func_num_args()."?__".current_filter()."$#i", $route['data']['method']))
-			{
-				$this->__routes[$i]['has_run'] = true;
-				
-				$args = func_get_args();
-				array_unshift($args, $route['data']['handle']);
-								
-				return call_user_func_array(array($this, 'route2'), $args); 
 			}
 		}
 	}
