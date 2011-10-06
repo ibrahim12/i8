@@ -19,7 +19,7 @@ class Ctrl {
 		$this->url = $this->plugin->url;
         
 		# set path to related templates
-        $this->tpls = $this->path . '/_tpls/' . $this->ctrl;
+		$this->tpls = $this->path . '/_tpls/' . $this->ctrl;
 		$this->robots = $this->path . '/_robots';
 		
 		# if there's appropriate robot - load it up

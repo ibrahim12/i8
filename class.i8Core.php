@@ -93,10 +93,12 @@ class i8Core {
 				if (class_exists("{$this->prefix}$addon")) {
 					continue;
 				}
-	
-				$path = "$this->path/addons/class.$addon.php";
+			
+				$url = "$this->url/i8/addons";
+				$path = "$this->i8_path/addons/class.$addon.php"; 
 				if (!file_exists($path)) {
-					$path = "$this->i8_path/addons/class.$addon.php"; // try to use addon from global i8
+					$url.= "/$addon";
+					$path = "$this->i8_path/addons/$addon/class.$addon.php"; // addon might have it's own folder
 				}
 	
 				if (file_exists($path))
@@ -105,13 +107,12 @@ class i8Core {
 					//$fqdn_addon = "Plugino/$a";
 					$addon_class = "{$this->prefix}{$addon}Addon";
 					$this->$addon = new $addon_class;
-					$this->$addon->url = $this->url;
-					$this->$addon->path = $this->path;
+					$this->$addon->url = $url;
+					$this->$addon->path = dirname($path);
 					$this->$addon->plugin = $this;
 	
-					// for the hook handlers that needs three variables defined above
-					if (method_exists($this->$addon, 'hooks')) {
-						$this->$addon->hooks();
+					if (method_exists($this->$addon, 'init')) {
+						$this->$addon->init();
 					}
 				}
 			}
@@ -128,7 +129,7 @@ class i8Core {
 	}
 	
 	/**
-	 * In TRC pre_route2 can be requested to e attached to the same action multiple times and the only way to accomplish this is to set bigger (lower) priority
+	 * In TRC pre_route2 can be requested to be attached to the same action multiple times and the only way to accomplish this is to set bigger (lower) priority
 	 */
 	private function get_the_lowest_priority($tag, $function_to_check, $priority = 10) 
 	{
