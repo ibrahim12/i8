@@ -282,7 +282,7 @@ class i8Core {
 		$options_page_defined = false;
 		if (!empty($this->pages)) {
 			foreach ($this->pages as $page) {
-				if (in_array($page['handle'], array('options_form', 'page_options_form', "{$this->classname}_options")) || $page['parent'] == 'options') {
+				if (in_array($page['handle'], array('page_options_form', "{$this->prefix}options_form", "{$this->classname}_options")) || $page['parent'] == 'options') {
 					$options_page_defined = true; // probably already defined, pass...
 					break;
 				}
