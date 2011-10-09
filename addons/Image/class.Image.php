@@ -7,6 +7,7 @@ class ImageAddon {
 	{
 		add_action('wp_ajax_i8_image_upload', array($this, 'a__wp_ajax_i8_image_upload')); 
 		add_action('wp_ajax_i8_image_delete', array($this, 'a__wp_ajax_i8_image_delete')); 
+		add_action('wp_ajax_i8_image_order', array($this, 'a__wp_ajax_i8_image_order'));
 		
 		add_image_size('i8-thumb', 200, 120, true);
 	}
@@ -56,16 +57,37 @@ class ImageAddon {
 	}
 	
 	
+	function a__wp_ajax_i8_image_order()
+	{
+		if (!is_array($_POST['item']) || !is_numeric($_POST['post_parent'])) {
+			die;	
+		}
+		
+		$items = $_POST['item'];
+		
+		global $wpdb;
+		for ($i = 0, $max = sizeof($items); $i < $max; $i++) {
+			if (!is_numeric($items[$i])) {
+				continue;	
+			}
+			$wpdb->query("UPDATE $wpdb->posts SET menu_order = $i WHERE ID = {$items[$i]} AND post_parent = {$_POST['post_parent']}");
+		}
+	}
+	
+	
 	function load_manager_scripts()
 	{
-		wp_enqueue_script('i8-image-plupload', $this->url . "/js/plupload.full.js"	, array('thickbox', 'post'), '1.5.1.1');
+		wp_enqueue_script('i8-image-plupload', $this->url . "/js/plupload.full.js"	, array('jquery-ui-sortable', 'thickbox', 'post'), '1.5.1.1');
 		wp_enqueue_style('thickbox');
 	}
 	
 	
-	function _gallery_manager_metabox($post)
+	function _gallery_manager_metabox($post = null)
 	{
-		$atts = get_posts("post_parent={$post->ID}&post_type=attachment&numberposts=-1&orderby=menu_order&order=ASC");
+		if (!is_null($post) && is_numeric($post->ID)) {
+			$atts = get_posts("post_parent={$post->ID}&post_type=attachment&numberposts=-1&orderby=menu_order&order=ASC");
+		}
+		
 		include("$this->path/tpls/manager.php");
 	}
 	

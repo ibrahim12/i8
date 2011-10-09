@@ -1,10 +1,10 @@
 <style>
-#i8-gallery {
+.i8-gallery {
 	padding:7px 0;	
 }
 
 
-#i8-gallery li {
+.i8-gallery li {
 	float:left;
 	margin:0 10px 10px 0;
 	padding:3px;
@@ -12,9 +12,11 @@
     border-radius:3px;
 	background:#fff;
 	position:relative;
+	width:200px;
+	height:120px;
 }
 
-#i8-gallery li a {
+.i8-gallery li a {
 	display:block;	
 }
 
@@ -28,7 +30,7 @@
 
 </style>
 
-<ul id="i8-gallery">
+<ul id="i8-gallery" class="i8-gallery">
 	<?php foreach ((array)$atts as $att) :
 		if (!wp_attachment_is_image($att->ID)) {
 			continue;	
@@ -95,24 +97,32 @@
 	});
 	
 	
-	$('#i8-gallery').click(function(e) {
-		var it = $(e.target), li;
-		
-		if (!it.is('.i8-close')) {
-			return;	
-		}
-		
-		li = it.parent();
-		
-		li.animate({ backgroundColor: '#c00', opacity: 0}, 'fast', 'swing', function() { li.remove(); });
-		
-		$.post(ajaxurl, {
-				post_id: li.attr('id').replace(/^i8-item-/, ''),
-				action: 'i8_image_delete'
-			}, function(r) {}, 'json'
-		);
-		
-	});
+	$('#i8-gallery')
+		.click(function(e) {
+			var it = $(e.target), li;
+			
+			if (!it.is('.i8-close')) {
+				return;	
+			}
+			
+			li = it.parent();
+			
+			li.animate({ backgroundColor: '#c00', opacity: 0}, 'fast', 'swing', function() { li.remove(); });
+			
+			$.post(ajaxurl, {
+					post_id: li.attr('id').replace(/^i8-item-/, ''),
+					action: 'i8_image_delete'
+				}, function(r) {}, 'json'
+			);
+		})
+		.sortable({
+			stop: function(e, ui) {
+				var me = $(this),
+					queryStr = me.sortable('serialize', {key : 'item[]'});
+				
+				$.post(ajaxurl, queryStr + '&action=i8_image_order&post_parent=<?php echo intval($post->ID); ?>');
+			}
+		});
 	
 }(jQuery));
 </script>

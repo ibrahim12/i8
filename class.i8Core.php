@@ -75,7 +75,7 @@ class i8Core {
 		
 		list($handle, $ctrl, $action) = explode('__', $method);
 		
-		// by now this is going to be used for routing actions to TRC controllers
+		// by now this is going to be used only for routing actions to TRC controllers
 		switch ($handle) {
 			case 'r':
 			case 'route':
@@ -277,8 +277,39 @@ class i8Core {
 	function _pages_add() // on admin_menu
 	{
 		$this->pages = apply_filters("i8_pages_{$this->classname}", $this->pages);
+		
+		// try to auto define option page if required
+		$options_page_defined = false;
+		if (!empty($this->pages)) {
+			foreach ($this->pages as $page) {
+				if (in_array($page['handle'], array('options_form', "{$this->prefix}p__options_form")) || $page['parent'] == 'options') {
+					$options_page_defined = true; // probably already defined, pass...
+					break;
+				}
+			}
+		}
+		
+		if (!$options_page_defined && isset($this->options)) {
+			// loop through options and detect if separate options page required
+			foreach ($this->options as $name => $o) { 		
+            	if (is_array($o) && isset($o['type'])) {
+					// %99.9 that options page required
+					if (!is_array($this->pages)) {
+						$this->pages = array();	
+					}
+					$this->pages[] = array(
+						'page_title' => "{$this->info['Name']} Options",
+						'parent' => 'options',
+						'handle' => "{$this->classname}_options",
+						'callback' => array($this, 'options_form')
+					);
+					break;
+				}
+			}
+		}
+		
 	
-		if ( empty($this->pages) )
+		if (empty($this->pages))
 			return;
 	
 		for ( $i = 0, $max = sizeof($this->pages); $i < $max; $i++ ) :
@@ -287,11 +318,9 @@ class i8Core {
 				$page_title = $menu_title = $this->pages[$i]['page_title'];
 			else
 				continue;
-	
-			$title_sanitized = sanitize_with_underscores($page_title);
-	
+		
 			$defaults = array(
-				'handle' => "page_$title_sanitized",
+				'handle' => "page_" . sanitize_with_underscores($page_title),
 				'capability' => 10,
 				'icon_url' => ''
 			);
@@ -337,7 +366,7 @@ class i8Core {
 			}
 	
 	
-			# activate CRT engine if needed
+			# activate TRC engine if needed
 			if (strpos($handle, '/') !== false)  // must be slash separated Ctrl/Action pair
 			{
 				/* controller action should be called before output is started (usually by admin-head.php), so page
@@ -346,7 +375,7 @@ class i8Core {
 				stuff is outputted */
 				add_action("load-$hook", array($this, "route2"));
 	
-				remove_action($hook, $callback);  // for MTB we need to replace default action with our own
+				remove_action($hook, $callback);  // for TRC we need to replace default action with our own
 				add_action($hook, array($this, "_page_output"));
 			}
 	
@@ -577,7 +606,7 @@ class i8Core {
 	{
 		?><table class="form-table">
 		<?php foreach ($options as $name => $o) : 		
-            if (is_array($o) && isset($o['type'])) : ?>
+            if (is_array($o) && isset($o['type']) && !isset($o['hidden'])) : ?>
         <tr valign="top">
             
             <?php $method = "options_field_{$o['type']}";
