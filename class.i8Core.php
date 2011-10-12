@@ -2,19 +2,19 @@
 
 class i8Core {
 	
-    var $prefix = '';
+    public $prefix = '';
 
-    var $namespace = 'i8core_';
+    public $namespace = 'i8core_';
 
-    var $msgs = array();
+    private $msgs = array();
 	
-	private $__routes = array();
-
+	private $_defaults = array(), $_options = array(), $_option_fields = array();
+	
+	
 	function __construct()
 	{
 		# activate debug if set
 		if ($this->debug) {
-			define('WP_DEBUG', false);
 			ini_set('display_errors', 1);
 			error_reporting(E_ALL & ~E_NOTICE);
 		}
@@ -504,26 +504,17 @@ class i8Core {
 	
 	function o($name, $value = false)
 	{
-		if (func_num_args() == 1) 
-		{
-			if (is_array($this->options[$name]) && isset($this->options[$name]['type']))
-				return $this->options[$name]['value'];
-			else
-				return $this->options[$name];
+		if (func_num_args() == 1) {
+			return isset($this->_options[$name]) ? $this->_options[$name] : null;
 		} 
-		else
-		{
-			if (is_array($this->options[$name]) && isset($this->options[$name]['type']))
-				$this->options[$name]['value'] = $value;
-			else
-				$this->options[$name] = $value;
-			
+		else {
+			$this->_options[$name] = $value;
 			$this->options_update();
 		}
 	}
 	
 	
-	function o_name($name)
+	function the_o($name)
 	{
 		echo "{$this->options_handle}[$name]";
 	}
@@ -532,23 +523,22 @@ class i8Core {
 	function options_init()
 	{
 		$this->options_handle = "{$this->namespace}options";
+		$this->extract_defaults();
 		$this->options_get(true);
 	}
 	
 	
 	function options_validate($input)
 	{
-		foreach ($this->options as $name => $o) {
-			if (!is_array($o) || !isset($o['type']))
-				continue;
+		foreach ($this->_option_fields as $name => $o) {
 			
-			# provide value for checkboxes if not set
-			if ('checkbox' == $o['type'] && !isset($input[$name]['value'])) {
-				$input[$name]['value'] = 0;
+			# provide values for checkboxes if not set
+			if ('checkbox' == $o['type'] && !isset($input[$name])) {
+				$input[$name] = 0;
 			}
 			# take care of password fields, which are emptied on show for security reasons
-			elseif ('password' == $o['type'] && empty($input[$name]['value'])) {
-				$input[$name]['value'] = $this->options[$name]['value'];
+			elseif ('password' == $o['type'] && empty($input[$name])) {
+				$input[$name] = $o['value'];
 			}
 		}
 		return apply_filters("i8_options_validate_{$this->classname}", $input);
@@ -557,22 +547,47 @@ class i8Core {
 	
 	function options_get($from_db = false)
 	{
-		if (!$from_db && !empty($this->options))
-			return $this->options;
-	
-		if (empty($this->defaults))
-			$this->defaults = $this->options;
+		if (!$from_db && !empty($this->_options))
+			return $this->_options;
 				
-		$this->options = array_merge_better($this->options, get_option($this->options_handle));
+		$this->_options = array_merge($this->_defaults, get_option($this->options_handle));
+		return $this->_options;
+	}
+	
+	
+	protected function _parse_options($options = false, $section = false)
+	{
+		if (empty($options)) {
+			return false;	
+		}
 		
-		return $this->options;
+		foreach ($options as $id => $o) {
+			// prevent duplicates
+			if (isset($this->_defaults[$id])) { 
+				continue;	
+			}
+			
+			if (!is_array($o)) { // doesn't have visual representation
+				$this->_defaults[$id] = $o;		
+			} elseif (isset($o['type'])) // requires form field
+			{
+				$this->_defaults[$id] = isset($o['value']) ? $o['value'] : null;	
+				
+				if ($section) {
+					$this->_option_fields = $o; // for validation purposes we got to store field structure separately
+				}
+			} 
+			elseif (isset($o['options'])) { // section, postbox, etc
+				$this->_parse_options($o['options'], $id);
+			}
+		}		
 	}
 	
 	
 	function options_update()
 	{
-		if (!empty($this->options))
-			update_option($this->options_handle, $this->options);
+		if (!empty($this->_options))
+			update_option($this->options_handle, $this->_options);
 	}
 	
 	
@@ -602,68 +617,84 @@ class i8Core {
 	}
 	
 	
-	function options_table(&$options)
+	function options_table($options)
 	{
 		?><table class="form-table">
 		<?php foreach ($options as $name => $o) : 		
-            if (is_array($o) && isset($o['type']) && !isset($o['hidden'])) : ?>
-        <tr valign="top">
-            
-            <?php $method = "options_field_{$o['type']}";
-            if ($o['custom']) 
-            { 
-            ?><td colspan="2"><?php
-                if (method_exists($this, $method))
-                    $this->$method($name, $o);
-            ?></td><?php 
-            }
-            else 
-            { 
-            ?><th scope="row"><label><?php echo $o['label']; ?></label></th>
-            <td><?php
-                if (method_exists($this, $method))
-                    $this->$method($name, $o);
-            ?></td><?php 
-            } ?>
-        </tr>
+			if (!is_array($o) || isset($o['hidden'])) { // omit fields marked as hidden
+				continue;
+			}
+			
+			// in case we've matched the section of some kind
+			if (isset($o['options']) && !empty($o['options'])) {
+				$method = "options_section_{$o['type']}";
+				if (method_exists($this, $method)) {
+					?></table><?php $this->$method($name, $o); 
+					continue;
+				}
+			}
+			
+			// regular field here	
+			$method = "options_field_{$o['type']}"; 
+			if (method_exists($this, $method)) :
+            ?><tr valign="top">                
+				<?php if (isset($o['custom'])) { ?>
+                <td colspan="2"><?php $this->$method($name, $o); ?></td>
+				<?php } else { ?>
+                <th scope="row"><label><?php echo $o['label']; ?></label></th>
+                <td><?php $this->$method($name, $o); ?></td>
+				<?php } ?>
+            </tr>
             <?php endif;
-        endforeach; ?>
+			
+		endforeach; ?>
         </table><?php
+	}
+	
+	
+	function options_section_section($name, $o) 
+	{
+		?><h3><?php echo $o['title']; ?></h3><?php
+		if (isset($o['desc'])) {
+		?><p><?php echo $o['desc']; ?></p><?php
+		}
+		
+		$this->options_table($o['options']);
 	}
 	
 	
 	function options_field_text($name, &$o)
 	{
 		extract($o);
-		?><input type="text" name="<?php echo $this->options_handle; ?>[<?php echo $name; ?>][value]" class="<?php echo $class; ?>" value="<?php echo $value; ?>" /> <span class="description"><?php echo $desc; ?></span><?php
+		?><input type="text" name="<?php $this->the_o($name); ?>" class="<?php echo $class; ?>" value="<?php echo $this->o($name); ?>" /> <span class="description"><?php echo $desc; ?></span><?php
 	}
 	
 	function options_field_textarea($name, &$o)
 	{
 		extract($o);
-		?><textarea name="<?php echo $this->options_handle; ?>[<?php echo $name; ?>][value]" class="<?php echo $class; ?>"><?php echo $value; ?></textarea><br /> <span class="description"><?php echo $desc; ?></span><?php
+		?><textarea name="<?php $this->the_o($name); ?>" class="<?php echo $class; ?>"><?php echo $this->o($name); ?></textarea><br /> <span class="description"><?php echo $desc; ?></span><?php
 	}
 	
 	function options_field_password($name, &$o)
 	{
 		extract($o);
-		?><input type="password" name="<?php echo $this->options_handle; ?>[<?php echo $name; ?>][value]" class="<?php echo $class; ?>" value="<?php echo $value; ?>" /> <span class="description"><?php echo $desc; ?></span><?php
+		?><input type="password" name="<?php $this->the_o($name); ?>" class="<?php echo $class; ?>" value="<?php echo $this->o($name); ?>" /> <span class="description"><?php echo $desc; ?></span><?php
 	}
 	
 	
 	function options_field_checkbox($name, &$o)
 	{
 		extract($o);
-		?><input type="checkbox" name="<?php echo $this->options_handle; ?>[<?php echo $name; ?>][value]" value="1" <?php if ($value) echo 'checked="checked"'; ?> /> <span class="description"><?php echo $desc; ?></span><?php
+		?><input type="checkbox" name="<?php $this->the_o($name); ?>" value="1" <?php if ($this->o($name)) echo 'checked="checked"'; ?> /> <span class="description"><?php echo $desc; ?></span><?php
 	}
 	
 	function options_field_select($name, &$o)
 	{
 		extract($o);
 		
-		?><select name="<?php echo $this->options_handle; ?>[<?php echo $name; ?>][value]" class="<?php echo $class; ?>">
+		?><select name="<?php $this->the_o($name); ?>" class="<?php echo $class; ?>">
         <?php foreach ((array)$items as $k => $v) { ?>
-        	<option value="<?php echo $k; ?>" <?php if ($k == $value) echo 'selected="selected"'; ?>><?php echo $v; ?></option>
+        	<option value="<?php echo $k; ?>" <?php if ($k == $this->o($name)) echo 'selected="selected"'; ?>><?php echo $v; ?></option>
         <?php } ?>	
         </select>  <span class="description"><?php echo $desc; ?></span><?php
 	}
