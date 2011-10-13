@@ -298,7 +298,7 @@ class i8Core {
 						$this->pages = array();	
 					}
 					$this->pages[] = array(
-						'page_title' => "{$this->info['Name']} Options",
+						'title' => "{$this->info['Name']} Options",
 						'parent' => 'options',
 						'handle' => "{$this->classname}_options",
 						'callback' => array($this, 'options_form')
@@ -314,15 +314,15 @@ class i8Core {
 	
 		for ( $i = 0, $max = sizeof($this->pages); $i < $max; $i++ ) :
 	
-			if ( isset($this->pages[$i]['page_title']) )
-				$page_title = $menu_title = $this->pages[$i]['page_title'];
+			if ( isset($this->pages[$i]['title']) )
+				$title = $menu_title = $this->pages[$i]['title'];
 			else
 				continue;
 		
 			$defaults = array(
-				'handle' => "page_" . sanitize_with_underscores($page_title),
+				'handle' => "page_" . sanitize_with_underscores($title),
 				'capability' => 10,
-				'icon_url' => ''
+				'icon' => ''
 			);
 			extract($this->pages[$i] = wp_parse_args($this->pages[$i], $defaults));
 			
@@ -356,13 +356,13 @@ class i8Core {
 					$callback = $this->pages[$parent]['callback'];
 				}
 	
-				$hook = add_submenu_page( $parent, $page_title, $menu_title, $capability, $handle, $callback );
+				$hook = add_submenu_page( $parent, $title, $menu_title, $capability, $handle, $callback );
 			}
 			else
 			{
 				//if ( isset($insert_after) )
 	
-				$hook = add_menu_page( $page_title, $menu_title, $capability, $handle, $callback, $icon_url );
+				$hook = add_menu_page( $title, $menu_title, $capability, $handle, $callback, $icon );
 			}
 	
 	
@@ -381,7 +381,7 @@ class i8Core {
 	
 	
 			# save end values, just to keep it consisstent
-			$this->pages[$i] = compact('parent','page_title','menu_title','capability','handle','callback','icon_url','hook');
+			$this->pages[$i] = compact('parent','title','menu_title','capability','handle','callback','icon','hook');
 	
 		endfor;
 	}
@@ -524,7 +524,7 @@ class i8Core {
 	{
 		$this->options_handle = "{$this->namespace}options";
 		$this->_parse_options();
-		$this->options_get(true);
+		$this->options(true);
 	}
 	
 	
@@ -545,7 +545,7 @@ class i8Core {
 	}
 	
 	
-	function options_get($from_db = false)
+	function options($from_db = false)
 	{
 		if (!$from_db && !empty($this->_options))
 			return $this->_options;
@@ -654,7 +654,6 @@ class i8Core {
 		if (isset($o['desc'])) {
 		?><p><?php echo $o['desc']; ?></p><?php
 		}
-		
 		$this->options_table($o['options']);
 	}
 	
