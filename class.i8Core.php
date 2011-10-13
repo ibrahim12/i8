@@ -523,7 +523,7 @@ class i8Core {
 	function options_init()
 	{
 		$this->options_handle = "{$this->namespace}options";
-		$this->extract_defaults();
+		$this->_parse_options();
 		$this->options_get(true);
 	}
 	
@@ -629,7 +629,7 @@ class i8Core {
 			if (isset($o['options']) && !empty($o['options'])) {
 				$method = "options_section_{$o['type']}";
 				if (method_exists($this, $method)) {
-					?></table><?php $this->$method($name, $o); 
+					?><tr valign="top"><td colspan="2"><?php $this->$method($name, $o); ?></td></tr><?php
 					continue;
 				}
 			}
@@ -638,12 +638,8 @@ class i8Core {
 			$method = "options_field_{$o['type']}"; 
 			if (method_exists($this, $method)) :
             ?><tr valign="top">                
-				<?php if (isset($o['custom'])) { ?>
-                <td colspan="2"><?php $this->$method($name, $o); ?></td>
-				<?php } else { ?>
                 <th scope="row"><label><?php echo $o['label']; ?></label></th>
                 <td><?php $this->$method($name, $o); ?></td>
-				<?php } ?>
             </tr>
             <?php endif;
 			
