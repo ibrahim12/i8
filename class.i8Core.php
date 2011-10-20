@@ -249,8 +249,13 @@ class i8Core {
 		// create instance only if we do not already have one
 		if (!isset($this->ctrls[$ctrl])) {
 			$this->ctrls[$ctrl] = new $ctrl_class($this);
+			
+			// call init function if defined
+			if (method_exists($this->ctrls[$ctrl], '_init')) {
+				$this->ctrls[$ctrl]->_init();
+			}
 		} 	
-		
+				
 		// set current action
 		$this->ctrls[$ctrl]->action = $action;		
 		
@@ -303,11 +308,17 @@ class i8Core {
 						'handle' => "{$this->classname}_options",
 						'callback' => array($this, 'options_form')
 					);
+					// remember options url
+					$this->options_url = add_query_arg('page', "{$this->classname}_options", admin_url('options-general.php'));
+					
+					
+					
+					// add url to pptions page into plugin's actions row
+					add_filter("plugin_action_links_{$this->base_name}", array($this, '_insert_link2settings'));
 					break;
 				}
 			}
 		}
-		
 	
 		if (empty($this->pages))
 			return;
@@ -384,6 +395,13 @@ class i8Core {
 			$this->pages[$i] = compact('parent','title','menu_title','capability','handle','callback','icon','hook');
 	
 		endfor;
+	}
+	
+	
+	function _insert_link2settings($actions)
+	{
+		$actions['Settings'] = '<a href="'.$this->options_url.'">'.__('Settings', 'i8').'</a>';
+		return $actions;
 	}
 	
 	
@@ -607,7 +625,7 @@ class i8Core {
 				$this->options_table($this->options);
 				
 				?><p class="submit">
-                	<input type="submit" name="Submit" class="button-primary" value="Save" />
+                	<input type="submit" name="Submit" class="button-primary" value="Save Changes" />
                 </p>
                 </form>	
             </div>
@@ -678,7 +696,7 @@ class i8Core {
 	
 	
 	function options_field_checkbox($name, &$o)
-	{
+	{		
 		extract($o);
 		?><input type="checkbox" name="<?php $this->the_o($name); ?>" value="1" <?php if ($this->o($name)) echo 'checked="checked"'; ?> /> <span class="description"><?php echo $desc; ?></span><?php
 	}

@@ -83,12 +83,12 @@ class ImageAddon {
 	
 	
 	function _gallery_manager_metabox($post = null)
-	{
+	{	
 		if (!is_null($post) && is_numeric($post->ID)) {
 			$atts = get_posts("post_parent={$post->ID}&post_type=attachment&numberposts=-1&orderby=menu_order&order=ASC");
 		}
 		
-		include("$this->path/tpls/manager.php");
+		include("$this->path/tpls/manager.php");		
 	}
 	
 	

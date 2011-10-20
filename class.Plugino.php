@@ -22,14 +22,15 @@ class Plugino extends i8Core {
 		}
 		
 		# plugin urls and paths		
-		$plugin_dir = plugin_basename(dirname($this->__FILE__));
+		$plugin_dir = basename(dirname($this->__FILE__));
 		$this->url	= WP_PLUGIN_URL . '/' . $plugin_dir;
-		$this->path	= WP_PLUGIN_DIR . '/' . $plugin_dir;		
+		$this->path	= WP_PLUGIN_DIR . '/' . $plugin_dir;
+		$this->base_name = plugin_basename($this->__FILE__);		
 		
 		# check if uninstall has called this, logic will break here, if it has
 		if ($this->_uninstalling())
 		{
-			add_action('uninstall_' . plugin_basename($this->__FILE__), array($this, '_uninstall'), 0);
+			add_action('uninstall_' . $this->base_name, array($this, '_uninstall'), 0);
 			return;
 		}
 		
