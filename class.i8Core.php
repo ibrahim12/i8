@@ -541,7 +541,7 @@ class i8Core {
 	function options_init()
 	{
 		$this->options_handle = "{$this->namespace}options";
-		$this->_parse_options();
+		$this->_parse_options($this->options);
 		$this->options(true);
 	}
 	
@@ -568,7 +568,7 @@ class i8Core {
 		if (!$from_db && !empty($this->_options))
 			return $this->_options;
 				
-		$this->_options = array_merge($this->_defaults, get_option($this->options_handle));
+		$this->_options = array_merge($this->_defaults, $options = get_option($this->options_handle) ? $options : array());
 		return $this->_options;
 	}
 	
