@@ -780,7 +780,7 @@ class i8Core {
 	/**
 	 * Output the Widget by it's name and optionally override it's options
 	 */
-	static function the_widget($name, $instance = array()) 
+	function the_widget($name, $instance = array()) 
 	{
 		static $count = 1;
 				
@@ -791,6 +791,40 @@ class i8Core {
 			'before_title' => '',
 			'after_title' => ''
 		));
+	}
+	
+	
+	/**
+	 * Checks if user has one of specified roles. If user identifier not passed, function will check current user
+	 *
+	 * @param String/Array $role_names Role name(s)
+	 * @param Object/Int $user (optional) User identifier, if not passed current user will be checked.
+	 * @return Boolean true/false 
+	 */
+	function has_role($role_names, $user = false)
+	{
+		if (!$user) {
+			if (!is_user_logged_in()) {
+				return false;	
+			}
+			$user = wp_get_current_user();	
+		}
+		
+		if (is_numeric($user)) {
+			$user = get_userdata($user);	
+		}
+		
+		if (!is_array($role_names)) {
+			$role_names = array($role_names);	
+		}
+		
+		foreach ($role_names as $name) {
+			if (in_array($name, $user->roles)) {
+				return true;	
+			}
+		}
+		
+		return false;
 	}
 	
 	
