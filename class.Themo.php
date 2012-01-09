@@ -2,7 +2,7 @@
 
 require_once(dirname(__FILE__) . '/class.i8Core.php');
 
-class Themo extends i8Core {
+class Themo extends i8 {
 
 	var $data = null;
 	

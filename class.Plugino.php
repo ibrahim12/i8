@@ -2,7 +2,7 @@
 
 require_once(dirname(__FILE__) . '/class.i8Core.php');
 
-class Plugino extends i8Core {
+class Plugino extends i8 {
 	
 	var $url;
 	var $path;

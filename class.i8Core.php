@@ -1,10 +1,10 @@
 <?php
 
-class i8Core {
+class i8 {
 	
     public $prefix = '';
 
-    public $namespace = 'i8core_';
+    public $namespace = 'i8_';
 
     private $msgs = array();
 	
@@ -30,7 +30,7 @@ class i8Core {
 		$this->upload_path 	= $upload_dir['basedir'];
 	
 	
-		# setting i8Core path
+		# setting i8 path
 		$this->i8_path = dirname(__FILE__);
 	
 		# require useful functions
@@ -54,7 +54,7 @@ class i8Core {
 	
 		# check for PHP5
 		if ( version_compare(phpversion(), '5') == -1)
-			$this->warn("<b>i8Core</b> requires PHP5. <b>$this->classname</b> plugin will deactivate <b>now</b>.");
+			$this->warn("<b>i8</b> requires PHP5. <b>$this->classname</b> plugin will deactivate <b>now</b>.");
 	
 	
 		# initialize options
