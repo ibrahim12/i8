@@ -35,8 +35,8 @@ class Themo extends i8Core {
             {
                 parent::_activation_operations();
 
-                if (method_exists($this, '_activate'))
-                    $this->_activate();
+                if (method_exists($this, 'on_activate'))
+					$this->on_activate($this->i8_data);
             }
         }
         

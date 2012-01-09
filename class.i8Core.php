@@ -827,6 +827,35 @@ class i8Core {
 		return false;
 	}
 	
+	/**
+	 * Adds specified cap(s) to specified role(s)
+	 *
+	 * @param String/Array $role_names Role name(s)
+	 * @param String/Array $caps Capability(-es) to add.
+	 */
+	function add_caps($role_names, $caps)
+	{
+		$role = new WP_Roles;
+	
+		if (!is_array($role_names)) {
+		   $role_names = array($role_names);
+		}
+			
+		# add_cap() writes to database on every call if use_db is true, don't need that
+		$role->use_db = false;
+	
+		foreach ((array)$role_names as $name) {
+			if ($role->is_role($name)) {
+				foreach ((array)$caps as $cap) {
+					$role->add_cap($name, $cap);
+				}
+			}
+		}
+		
+		$role->use_db = true;
+		update_option( $role->role_key, $role->roles );
+	}
+	
 	
 	/* cache management */
 	function get_cache($key)
