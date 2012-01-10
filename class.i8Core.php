@@ -436,7 +436,7 @@ class i8 {
 				# ...and create it, if it's - not, or if upgrade needed
 				if (!$table_exists  || $upgrade_needed)
 				{
-					$sql = preg_replace("#^CREATE TABLE[^\n]+\n#i", "CREATE TABLE `{$wpdb->$table}` (\n", trim($sql));
+					$sql = "CREATE TABLE `{$wpdb->$table}` (\n" . trim($sql) . "\n);";
 					dbDelta($sql);
 				}
 			}
@@ -853,9 +853,9 @@ class i8 {
 		}
 		
 		$role->use_db = true;
-		update_option( $role->role_key, $role->roles );
+		update_option($role->role_key, $role->roles);
 	}
-	
+		
 	
 	/* cache management */
 	function get_cache($key)
