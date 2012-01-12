@@ -332,7 +332,7 @@ class i8 {
 				continue;
 		
 			$defaults = array(
-				'handle' => "page_" . sanitize_with_underscores($title),
+				'handle' => "page_" . i8::sanitize_with_underscores($title),
 				'capability' => 10,
 				'icon' => ''
 			);
@@ -360,7 +360,7 @@ class i8 {
 						'pages'	=> 'edit-pages.php',
 						'comments' => 'edit-comments.php'
 					);
-					$parent = isset($predefined[$parent]) ? $predefined[$parent] : 'page_' . sanitize_with_underscores($parent);
+					$parent = isset($predefined[$parent]) ? $predefined[$parent] : 'page_' . i8::sanitize_with_underscores($parent);
 				}
 				# hack to avoid main title duplication as submenu
 				if (!isset($GLOBALS['submenu'][$parent])) {
@@ -793,6 +793,24 @@ class i8 {
 			'after_title' => ''
 		));
 	}
+	
+	function sanitize_with_underscores($str)
+	{
+		return preg_replace('|\W+|', '_', strtolower($str));
+	}
+	
+	
+	function strip_whitespace($html, $echo = false)
+	{
+		$stripped = preg_replace( "/(?:(?<=\>)|(?<=\/\>))(\s+)(?=\<\/?)/", "", preg_replace('|<!--[^>]*-->|', '', $html));
+		$stripped = str_replace(array("\r\n", "\n", "\r"), "", $stripped);
+	
+		if ($echo)
+			echo $stripped;
+		else
+			return $stripped;
+	}
+	
 	
 	/**
 	 * Get current URL.
