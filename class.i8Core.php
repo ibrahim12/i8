@@ -794,6 +794,19 @@ class i8 {
 		));
 	}
 	
+	/**
+	 * Get current URL.
+	 *	
+	 * @credits Konstantin Kovshenin (http://kovshenin.com/2012/01/current-url-in-wordpress-3754/)
+	 */
+	function get_current_url()
+	{
+		global $wp;
+		return add_query_arg($wp->query_string, '', home_url($wp->request));
+	}
+	
+	
+	
 	function get_post_by_slug($slug, $posts = false)
 	{
 		if (empty($slug)) {
