@@ -41,15 +41,16 @@ class i8 {
 		
 		# retrieve other info
 		$this->info = get_option("{$this->namespace}info");
-	
-	
+				
 		# add tables to global $wpdb object
 		if (!empty($this->tables))
 		{
 			global $wpdb;
-			foreach ($this->tables as $table => $sql)
-				if (!isset($wpdb->$table) && !in_array($table, $wpdb->tables))
+			foreach ($this->tables as $table => $sql) {
+				if (!isset($wpdb->$table) && !in_array($table, $wpdb->tables)) {
 					$wpdb->$table = strtolower($wpdb->prefix . $this->prefix . $table);
+				}
+			}				
 		}
 	
 		# check for PHP5
@@ -791,6 +792,25 @@ class i8 {
 			'before_title' => '',
 			'after_title' => ''
 		));
+	}
+	
+	function get_post_by_slug($slug, $posts = false)
+	{
+		if (empty($slug)) {
+			return false;
+		}
+	
+		if (is_array($posts) && !empty($posts))
+		{
+			foreach ($posts as $post) {
+				if ($post->post_name == $slug) {
+					return $post;
+				}
+			}
+		}
+	
+		global $wpdb;
+		return $wpdb->get_row("SELECT * FROM $wpdb->posts WHERE post_name = '{$wpdb->escape($slug)}'");
 	}
 	
 	
