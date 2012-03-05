@@ -33,9 +33,6 @@ class i8 {
 		# setting i8 path
 		$this->i8_path = dirname(__FILE__);
 	
-		# require useful functions
-		require_once( $this->i8_path . '/functions.php' );
-	
 		# retrieve version
 		$this->version = get_option("{$this->namespace}version");
 		
@@ -854,7 +851,7 @@ class i8 {
 	 */
 	function has_role($role_names, $user = false)
 	{
-		if (!$user) {
+		if (!$user || is_wp_error($user)) {
 			if (!is_user_logged_in()) {
 				return false;	
 			}
