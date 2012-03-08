@@ -434,7 +434,7 @@ class i8 {
 				# ...and create it, if it's - not, or if upgrade needed
 				if (!$table_exists  || $upgrade_needed)
 				{
-					$sql = "CREATE TABLE `{$wpdb->$table}` (\n" . trim($sql) . "\n);";
+					$sql = "CREATE TABLE `{$wpdb->$table}` (\n" . trim($sql) . "\n) DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";
 					dbDelta($sql);
 				}
 			}
