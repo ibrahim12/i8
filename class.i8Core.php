@@ -322,75 +322,77 @@ class i8 {
 			return;
 	
 		for ( $i = 0, $max = sizeof($this->pages); $i < $max; $i++ ) :
+
+			$p = $this->pages[$i];
 	
-			if ( isset($this->pages[$i]['title']) )
-				$title = $menu_title = $this->pages[$i]['title'];
+			if ( isset($p['title']) )
+				$p['title'] = $p['menu_title'] = $p['title'];
 			else
 				continue;
 		
-			$defaults = array(
-				'handle' => "page_" . i8::sanitize_with_underscores($title),
+			$p = wp_parse_args($p, array(
+				'handle' => "page_" . i8::sanitize_with_underscores($p['title']),
 				'capability' => 10,
 				'icon' => ''
-			);
-			extract($this->pages[$i] = wp_parse_args($this->pages[$i], $defaults));
-			
-			if (!isset($callback))
-				$callback = array($this, $handle);	
-	
+			));
+
+			if (!isset($p['callback']))
+				$p['callback'] = array($this, $p['handle']);				
 	
 			# handle page parents and create them
-			if ( isset($parent) )
+			if (isset($p['parent']) )
 			{
-				if ( is_numeric($parent) )
-					$parent = $this->pages[$parent]['handle'];
-				else {
-					$predefined = array(
-						'management' => 'tools.php',
-						'options' => 'options-general.php',
-						'theme'	=> 'themes.php',
-						'users'	=> current_user_can('edit_users') ? 'users.php' : 'profile.php',
-						'dashboard'	=> 'index.php',
-						'posts'	=> 'edit.php',
-						'media'	=> 'upload.php',
-						'links'	=> 'link-manager.php',
-						'pages'	=> 'edit-pages.php',
-						'comments' => 'edit-comments.php'
-					);
-					$parent = isset($predefined[$parent]) ? $predefined[$parent] : 'page_' . i8::sanitize_with_underscores($parent);
-				}
+				$predefined = array(
+					'management' => 'tools.php',
+					'options' => 'options-general.php',
+					'theme'	=> 'themes.php',
+					'users'	=> current_user_can('edit_users') ? 'users.php' : 'profile.php',
+					'dashboard'	=> 'index.php',
+					'posts'	=> 'edit.php',
+					'media'	=> 'upload.php',
+					'links'	=> 'link-manager.php',
+					'pages'	=> 'edit-pages.php',
+					'comments' => 'edit-comments.php'
+				);
+
+				if (is_numeric($p['parent'])) {
+					$p['parent'] = $this->pages[$p['parent']]['handle'];
+				} elseif (isset($predefined[$p['parent']])) {
+					$p['parent'] = $predefined[$p['parent']];
+				}  
+
 				# hack to avoid main title duplication as submenu
-				if (!isset($GLOBALS['submenu'][$parent])) {
-					$handle = $parent;
-					$callback = $this->pages[$parent]['callback'];
-				}
+				/*if (!isset($GLOBALS['submenu'][$p['parent']])) {
+					$p['handle'] = $p['parent'];
+					$p['callback'] = $this->pages[$p['parent']]['callback'];
+				}*/
 	
-				$hook = add_submenu_page( $parent, $title, $menu_title, $capability, $handle, $callback );
+				$p['hook'] = add_submenu_page($p['parent'], $p['title'], $p['menu_title'], $p['capability'], $p['handle'], $p['callback']);
 			}
 			else
 			{
 				//if ( isset($insert_after) )
 	
-				$hook = add_menu_page( $title, $menu_title, $capability, $handle, $callback, $icon );
+				$p['hook'] = add_menu_page($p['title'], $p['menu_title'], $p['capability'], $p['handle'], $p['callback'], $p['icon']);
 			}
 	
 	
 			# activate TRC engine if needed
-			if (strpos($handle, '/') !== false)  // must be slash separated Ctrl/Action pair
+			if (strpos($p['handle'], '/') !== false)  // must be slash separated Ctrl/Action pair
 			{
 				/* controller action should be called before output is started (usually by admin-head.php), so page
 				generation runs on load-$page_hook action (before output, @see: wp-admin/admin.php), which among other
 				things let's it to load specific scripts, styles and do redirects. And then on usual page action buffered
 				stuff is outputted */
-				add_action("load-$hook", array($this, "route2"));
+				add_action("load-{$p['hook']}", array($this, "route2"));
 	
-				remove_action($hook, $callback);  // for TRC we need to replace default action with our own
-				add_action($hook, array($this, "_page_output"));
+				remove_action($p['hook'], $p['callback']);  // for TRC we need to replace default action with our own
+				add_action($p['hook'], array($this, "_page_output"));
 			}
 	
 	
 			# save end values, just to keep it consisstent
-			$this->pages[$i] = compact('parent','title','menu_title','capability','handle','callback','icon','hook');
+			$this->pages[$i] = $p;
 	
 		endfor;
 	}
