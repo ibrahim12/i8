@@ -367,7 +367,7 @@ class i8 {
 					$p['callback'] = $this->pages[$p['parent']]['callback'];
 				}*/
 	
-				$p['hook'] = add_submenu_page($p['parent'], $p['title'], $p['menu_title'], $p['capability'], $p['handle'], $p['callback']);
+				$p['hook'] = add_submenu_page($p['parent'], $p['title'], $p['menu_title'], $p['capability'], $p['handle'], $p['callback'], $p['icon']);
 			}
 			else
 			{
