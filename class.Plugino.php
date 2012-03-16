@@ -23,8 +23,8 @@ class Plugino extends i8 {
 		
 		# plugin urls and paths		
 		$plugin_dir = basename(dirname($this->__FILE__));
-		$this->url	= WP_PLUGIN_URL . '/' . $plugin_dir;
-		$this->path	= WP_PLUGIN_DIR . '/' . $plugin_dir;
+		$this->url = WP_PLUGIN_URL . '/' . $plugin_dir;
+		$this->path = WP_PLUGIN_DIR . '/' . $plugin_dir;
 		$this->base_name = plugin_basename($this->__FILE__);		
 		
 		# check if uninstall has called this, logic will break here, if it has

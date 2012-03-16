@@ -21,13 +21,20 @@ class i8 {
 	
 		# setting namespace for use in options, etc
 		$this->classname = get_class($this);
-		$parent_class = str_replace("{$this->classname}_", '', get_parent_class($this));
+		$parent_class = get_parent_class($this);
+
+		// if core libs are prefixed (should be prefixed with descendant classname), extract it and use as default prefix
+		if (stripos($parent_class, "{$this->classname}_") === 0) {
+			$this->prefix = "{$this->classname}_";
+			$parent_class = substr_replace($parent_class, '', 0, strlen($this->prefix));
+		}
+		
 		$this->i8 = strtolower($parent_class); // instance type
 		$this->namespace = $this->i8 . '_' . $this->classname . '_';
 	
 		$upload_dir = wp_upload_dir();
-		$this->upload_url 	= $upload_dir['baseurl'];
-		$this->upload_path 	= $upload_dir['basedir'];
+		$this->upload_url = $upload_dir['baseurl'];
+		$this->upload_path = $upload_dir['basedir'];
 	
 	
 		# setting i8 path
@@ -331,7 +338,7 @@ class i8 {
 				continue;
 		
 			$p = wp_parse_args($p, array(
-				'handle' => "page_" . i8::sanitize_with_underscores($p['title']),
+				'handle' => "page_" . call_user_func(array("{$this->prefix}i8", 'sanitize_with_underscores'), $p['title']),
 				'capability' => 10,
 				'icon' => ''
 			));
