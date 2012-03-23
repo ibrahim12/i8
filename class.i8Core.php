@@ -884,6 +884,22 @@ class i8 {
 		return false;
 	}
 	
+	
+	/**
+	 * Retrieve users by specific role
+	 *
+	 * @param String $role Role name
+	 * @param Int $num Number of users to retrieve, default is 50
+	 * @return Array of users
+	 */
+	function get_users_by_role($role, $num = 50)
+	{
+		$search = new WP_User_Search('', '', $role);
+		$search->users_per_page = $num;
+		return $search->get_results();
+	}
+
+
 	/**
 	 * Adds specified cap(s) to specified role(s)
 	 *
