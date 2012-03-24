@@ -901,7 +901,7 @@ class i8 {
 					ON (u.ID = um.user_id)
 				WHERE 
 					um.meta_key = 'wp_capabilities' AND 
-					um.meta_value LIKE '%{$wpdb->escape($role)}%'";
+					um.meta_value LIKE '%\"{$wpdb->escape($role)}\"%'";
 
 		if ($num > 0) {
 			$sql .= " LIMIT 0, $num";
