@@ -895,7 +895,33 @@ class i8 {
 		
 		return false;
 	}
+
 	
+	/**
+	 * Retrieve users by specific role
+	 *
+	 * @param String $role Role name
+	 * @param Int $num Number of users to retrieve, default is 50
+	 * @return Array of users
+	 */
+	function get_users_by_role($role, $num = 50)
+	{
+		global $wpdb;
+
+		$sql = "SELECT ID FROM $wpdb->users AS u
+				INNER JOIN $wpdb->usermeta AS um
+					ON (u.ID = um.user_id)
+				WHERE 
+					um.meta_key = 'wp_capabilities' AND 
+					um.meta_value LIKE '%\"{$wpdb->escape($role)}\"%'";
+
+		if ($num > 0) {
+			$sql .= " LIMIT 0, $num";
+		}
+		return $wpdb->get_col($sql);
+	}
+
+
 	/**
 	 * Adds specified cap(s) to specified role(s)
 	 *
