@@ -961,14 +961,19 @@ class i8 {
 						
 		// purge outdated cache 
 		$now = time();
-		foreach ($cache as $id => $body) {
-			if ($body['expires'] < $now) { 
-				unset($cache[$id]);
+		if (!empty($cache) && is_array($cache)) {
+			foreach ($cache as $id => $body) {
+				if ($body['expires'] < $now) { 
+					unset($cache[$id]);
+				}
+			}
+			update_option("{$this->namespace}cache", $cache);
+
+			if (isset($cache[$key])) {  
+				$cache[$key]['data'];
 			}
 		}
-		update_option("{$this->namespace}cache", $cache);
-				
-		return (isset($cache[$key]) ? $cache[$key]['data'] : false);
+		return false;
 	}
 	
 	
@@ -977,6 +982,9 @@ class i8 {
 		$key = md5(maybe_serialize($key));
 		
 		$cache = get_option("{$this->namespace}cache", array());
+		if (!is_array($cache)) {
+			$cache = array();
+		}
 		
 		$expires += time();
 		
