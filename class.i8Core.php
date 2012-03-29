@@ -4,12 +4,17 @@ class i8 {
 	
     public $prefix = '';
 
-    public $namespace = 'i8_';
+    public $classname, $namespace = 'i8_';
 
     private $msgs = array();
 	
 	private $_defaults = array(), $_options = array(), $_option_fields = array();
 	
+	public $debug = false;
+
+	public $i8_path, $path, $url, $upload_path, $upload_url;
+
+	public $options, $pages;
 	
 	function __construct()
 	{
@@ -165,17 +170,18 @@ class i8 {
 	
 	
 	private function hook_register($method, $override = false)
-	{	
+	{			
 		# extract hook type and handler
 		if (!$pos = strpos($method, '__')) { // not false and not on zero position
 			return;
 		}
-	
-		list($handle, $priority, $accepted_args) = explode('_', substr($method, 0, $pos));
+
 		$tag = substr($method, $pos + 2);
 	
-		$priority = is_numeric($priority) ? $priority : 10;
-		$accepted_args = is_numeric($accepted_args) ? $accepted_args : 1;
+		$params = explode('_', substr($method, 0, $pos));
+		$handle = array_shift($params);
+		$priority = is_numeric($priority = array_shift($params)) ? $priority : 10;
+		$args = is_numeric($args = array_shift($params)) ? $args : 1;
 	
 		if ($override) { // lets you define your own hook handler
 			$method = $override;
@@ -184,11 +190,11 @@ class i8 {
 		switch ( $handle ) :
 			case 'a':
 			case 'action':
-				add_action( $tag, array($this, $method), $priority, $accepted_args );
+				add_action( $tag, array($this, $method), $priority, $args );
 				break;
 			case 'f':
 			case 'filter':
-				add_filter( $tag, array($this, $method), $priority, $accepted_args );
+				add_filter( $tag, array($this, $method), $priority, $args );
 				break;
 			case 'sc':
 			case 'shortcode':
@@ -265,6 +271,12 @@ class i8 {
 		$this->ctrls[$ctrl]->action = $action;		
 		
 		return call_user_func_array(array($this->ctrls[$ctrl], $action), $args);
+	}
+
+
+	function _call()
+	{
+		return call_user_func_array(array($this, 'route2'), func_get_args());
 	}
 	
 	
