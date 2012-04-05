@@ -736,7 +736,7 @@ class i8 {
 	
 	function json($output)
 	{
-		return $this->output($output, 'json');
+		return self::output($output, 'json');
 	}
 	
 	
